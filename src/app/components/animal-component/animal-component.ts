@@ -1,25 +1,51 @@
 import { Component } from '@angular/core';
 import { AnimalService } from '../../services/animal-service';
-import { RouterOutlet } from "@angular/router";
+import { RouterOutlet, Router } from "@angular/router";
+import { ToastrService } from 'ngx-toastr';
+import { take } from 'rxjs';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-animal-component',
-  imports: [RouterOutlet],
+  standalone: true,              // 👈 si usas Angular 17+ standalone
+  imports: [RouterOutlet, ReactiveFormsModule, FormsModule],
   templateUrl: './animal-component.html',
-  styleUrl: './animal-component.css'
+  styleUrls: ['./animal-component.css'] // 👈 debe ser styleUrls (plural)
 })
 export class AnimalComponent {
-  animalList: any = [];
+  animalList: any[] = [];
+  animalForm!: FormGroup;
 
-  constructor(private animalService: AnimalService) { }
+  constructor(
+    private animalService: AnimalService,
+    private formBuilder: FormBuilder,
+    private router: Router,
+    private toastr: ToastrService
+  ) { }
 
-  getAllAnimals() {
-    this.animalService.getAllAnimalsData().subscribe((data: {}) => {
-      this.animalList = data;
-    });
-  }
   ngOnInit() {
+    this.animalForm = this.formBuilder.group({
+      nombre: ['', Validators.required],
+      edad: [0, [Validators.required, Validators.min(0)]],
+      tipo: ['', Validators.required],
+      fecha: ['', Validators.required]
+    });
     this.getAllAnimals();
   }
 
+  getAllAnimals() {
+    this.animalService.getAllAnimalsData().subscribe((data: any[]) => {
+      this.animalList = data;
+    });
+  }
+
+  newAnimalEntry() {
+    if (this.animalForm.invalid) return;
+
+    this.animalService.newAnimal(this.animalForm.value).subscribe(() => {
+      this.toastr.success('Clic aquí para actualizar la lista', 'Registro exitoso')
+        .onTap.pipe(take(1))
+        .subscribe(() => this.getAllAnimals());
+    });
+  }
 }
