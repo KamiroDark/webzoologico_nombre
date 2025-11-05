@@ -8,13 +8,13 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 @Component({
   selector: 'app-animal-component',
   standalone: true,              // 👈 si usas Angular 17+ standalone
-  imports: [RouterOutlet, ReactiveFormsModule, FormsModule],
+  imports: [ReactiveFormsModule, RouterOutlet],
   templateUrl: './animal-component.html',
   styleUrls: ['./animal-component.css'] // 👈 debe ser styleUrls (plural)
 })
 export class AnimalComponent {
   animalList: any[] = [];
-  animalForm!: FormGroup;
+  animalForm!: FormGroup | any;
 
   constructor(
     private animalService: AnimalService,
@@ -25,11 +25,10 @@ export class AnimalComponent {
 
   ngOnInit() {
     this.animalForm = this.formBuilder.group({
-      nombre: ['', Validators.required],
-      edad: [0, [Validators.required, Validators.min(0)]],
-      tipo: ['', Validators.required],
-      fecha: ['', Validators.required]
-    });
+      nombre : '',
+      edad: 0,
+      tipo: ''
+    })
     this.getAllAnimals();
   }
 
