@@ -1,20 +1,23 @@
-import { Component } from '@angular/core';
-import { AnimalService } from '../../services/animal-service';
-import { RouterOutlet, Router } from "@angular/router";
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { RouterOutlet } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
-import { take } from 'rxjs';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AnimalService } from '../../services/animal-service';
 
 @Component({
   selector: 'app-animal-component',
-  standalone: true,              // 👈 si usas Angular 17+ standalone
-  imports: [ReactiveFormsModule, RouterOutlet],
+  standalone: true,
+  imports: [ReactiveFormsModule, RouterOutlet, CommonModule],
   templateUrl: './animal-component.html',
-  styleUrls: ['./animal-component.css'] // 👈 debe ser styleUrls (plural)
+  styleUrls: ['./animal-component.css']
 })
-export class AnimalComponent {
+export class AnimalComponent implements OnInit {
   animalList: any[] = [];
-  animalForm!: FormGroup | any;
+  animalForm!: FormGroup;
+  idAnimal: any;
+  editableAnimal: boolean = false;
 
   constructor(
     private animalService: AnimalService,
@@ -25,16 +28,17 @@ export class AnimalComponent {
 
   ngOnInit() {
     this.animalForm = this.formBuilder.group({
-      nombre : '',
+      nombre: '',
       edad: 0,
       tipo: ''
-    })
+    });
     this.getAllAnimals();
   }
 
   getAllAnimals() {
     this.animalService.getAllAnimalsData().subscribe((data: any[]) => {
       this.animalList = data;
+      console.log('Animales cargados:', this.animalList);
     });
   }
 
@@ -42,9 +46,51 @@ export class AnimalComponent {
     if (this.animalForm.invalid) return;
 
     this.animalService.newAnimal(this.animalForm.value).subscribe(() => {
-      this.toastr.success('Clic aquí para actualizar la lista', 'Registro exitoso')
-        .onTap.pipe(take(1))
-        .subscribe(() => this.getAllAnimals());
+      this.toastr.success('Animal registrado exitosamente');
+      this.animalForm.reset();
+      this.getAllAnimals();
     });
+  }
+
+  updateAnimalEntry() {
+    // Removiendo valores vacíos del formulario de actualización
+    const formValue = { ...this.animalForm.value };
+    for (let key in formValue) {
+      if (!formValue[key]) {
+        delete formValue[key];
+      }
+    }
+
+    this.animalService.updateAnimal(this.idAnimal, formValue).subscribe(() => {
+      this.toastr.success('Animal actualizado exitosamente');
+      this.editableAnimal = false;
+      this.animalForm.reset();
+      this.getAllAnimals();
+    });
+  }
+
+  toggleEditAnimal(id: any) {
+    this.idAnimal = id;
+    console.log(this.idAnimal);
+
+    this.animalService.getOneAnimal(id).subscribe((data: any) => {
+      this.animalForm.patchValue(data);
+    });
+
+    this.editableAnimal = !this.editableAnimal;
+  }
+
+  trackById(index: number, item: any): any {
+    return item?._id ?? index;
+  }
+
+  deleteAnimalEntry(id: any) {
+    console.log(id)
+    this.animalService.deleteAnimal(id).subscribe(
+      () => {
+        //Enviando mensaje de confirmación
+        this.toastr.success('Animal actualizado exitosamente');
+      }
+    );
   }
 }
